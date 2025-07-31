@@ -1,0 +1,51 @@
+appId: com.duplicate-file-detector.app
+productName: Duplicate File Detector
+icon: assets/icons/icon.png
+directories:
+  output: release-new
+extraMetadata:
+  main: dist-electron/main.cjs
+forceCodeSigning: false
+asar: true
+files:
+  - dist/**/*
+  - dist-electron/**/*
+  - assets/**/*
+npmRebuild: false
+publish:
+  provider: github
+win:
+  verifyUpdateCodeSignature: false
+  requestedExecutionLevel: asInvoker
+  icon: assets/icons/icon.ico
+  target:
+    - target: portable
+      arch:
+        - x64
+    - target: nsis
+      arch:
+        - x64
+mac:
+  category: public.app-category.utilities
+  icon: assets/icons/icon.png
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+    - target: zip
+      arch:
+        - x64
+        - arm64
+linux:
+  icon: assets/icons/icon.png
+  target:
+    - target: AppImage
+      arch:
+        - x64
+    - target: tar.gz
+      arch:
+        - x64
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true

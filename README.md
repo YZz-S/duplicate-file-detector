@@ -26,12 +26,33 @@
 ### 🖥️ 桌面应用特性
 
 - **🔐 真实文件系统访问** - 直接访问本地文件，无需浏览器安全限制
+  - 使用Node.js fs模块进行文件操作
+  - 支持读取文件内容、元数据、权限信息
+  - 可访问系统任意目录（需要相应权限）
 - **🗑️ 安全文件删除** - 文件移动到系统回收站，支持恢复
+  - Windows: 使用shell32.dll的SHFileOperation API
+  - macOS: 使用NSFileManager的trashItem方法
+  - Linux: 使用freedesktop.org回收站规范
 - **📁 原生文件选择器** - 使用系统原生对话框选择目录
+  - 通过Electron的dialog.showOpenDialog API
+  - 支持多选、文件类型过滤
+  - 保持系统一致的用户体验
 - **⚡ 高性能扫描** - 基于 Node.js 的高效文件系统操作
+  - 异步I/O操作，不阻塞主线程
+  - 流式文件读取，支持大文件处理
+  - 多进程并发扫描（可配置线程数）
 - **🖱️ 原生拖拽支持** - 支持从文件管理器直接拖拽文件夹
+  - 监听webContents的drop事件
+  - 自动解析拖拽的文件路径
+  - 支持多文件夹同时拖拽
 - **📊 实时文件统计** - 获取真实的文件大小、创建时间等信息
+  - 使用fs.stat获取完整文件元数据
+  - 支持符号链接处理
+  - 提供文件权限和所有者信息
 - **🔄 跨平台兼容** - 已配置 Windows、macOS 和 Linux 构建（⚠️ 后两者未充分测试）
+  - 统一的API接口，自动适配不同平台
+  - 路径分隔符自动处理
+  - 平台特定功能的优雅降级
 
 ### 🎯 核心优势
 
@@ -101,11 +122,11 @@
 | 🧠 智能路径识别 | ✅ 支持 | 原生目录选择器，智能路径处理 |
 | 🎛️ 扫描参数自定义 | ✅ 支持 | 文件类型、大小、深度等可配置 |
 | ⚠️ 删除确认机制 | ✅ 支持 | 删除前会显示确认对话框 |
-| 🔔 系统通知功能 | ✅ 支持 | 扫描和删除操作的实时通知提醒 |
-| 🚨 智能异常通知 | ✅ 支持 | 自动分类系统错误并发送相应通知 |
+| 🔔 系统通知功能 | ✅ 支持 | 扫描和删除操作的实时通知提醒，支持权限管理 |
+| 🚨 智能异常通知 | ✅ 支持 | 自动分类系统错误并发送相应通知，包含7种错误类型 |
 | 💡 智能推荐保留文件 | ❌ 待开发 | 需要手动选择要保留的文件 |
 | 🔄 自动撤销删除 | ❌ 待开发 | 目前只能从回收站手动恢复 |
-| 📊 文件预览功能 | ✅ 支持 | 支持图片、音频、视频、文本文档预览 |
+| 📊 文件预览功能 | ✅ 支持 | 支持图片、音频、视频、文本文档预览，在新窗口中打开 |
 | 🎯 按规则批量选择 | ❌ 待开发 | 计划支持保留最大/最新文件等规则 |
 
 <table>
@@ -124,13 +145,29 @@
 
 ### 👁️ 文件预览功能
 
-支持多种文件格式的实时预览：
+支持多种文件格式的实时预览，在新窗口中打开：
 
-- 🖼️ **图片预览**: JPG, JPEG, PNG, GIF, BMP, TIFF, WEBP, SVG
-- 🎵 **音频预览**: MP3, WAV, FLAC, AAC, OGG, M4A（内置播放器）
-- 🎬 **视频预览**: MP4, AVI, MKV, MOV, WMV, FLV, WEBM（内置播放器）
+- 🖼️ **图片预览**: JPG, JPEG, PNG, GIF, BMP, WEBP, SVG, ICO
+  - 在新窗口中显示完整图片
+  - 自适应窗口大小，最大80vh高度
+  - 支持错误处理和回退显示
+- 🎵 **音频预览**: MP3, WAV, OGG, M4A, AAC, FLAC, WMA
+  - 内置HTML5音频播放器
+  - 显示音频时长和比特率信息（如可用）
+  - 优雅的播放器界面设计
+- 🎬 **视频预览**: MP4, WEBM, OGV, AVI, MOV, WMV, FLV, MKV
+  - 内置HTML5视频播放器
+  - 显示视频时长和分辨率信息（如可用）
+  - 最大70vh高度，自适应播放
 - 📝 **文本预览**: TXT, MD, JSON, XML, CSV, LOG, INI, CFG, CONF
-- 📋 **一键复制**: 支持文本内容快速复制到剪贴板
+  - 语法高亮显示（等宽字体）
+  - 支持大文件预览（最大600px高度滚动）
+  - 📋 一键复制文本内容到剪贴板
+  - 显示文件大小和格式信息
+- 📄 **不支持预览的文件**: 显示详细文件信息窗口
+  - 文件路径、大小、修改时间等详细信息
+  - 📋 一键复制文件路径功能
+  - 友好的文件类型说明
 
 ### 🗂️ 多目录管理
 
@@ -187,24 +224,31 @@
 全方位的操作通知和状态提醒：
 
 - ✅ 🚀 **扫描通知**
-  - 扫描开始提醒
-  - 扫描完成摘要
-  - 实时进度更新
+  - 扫描开始提醒（显示目录数量和文件类型）
+  - 扫描完成摘要（重复文件组数、总文件数、浪费空间、耗时）
+  - 扫描错误通知（详细错误信息）
 - ✅ 🗑️ **删除通知**
-  - 删除操作开始
-  - 删除完成统计
-  - 失败文件提醒
+  - 删除操作开始（文件数量和删除类型）
+  - 删除完成统计（成功数量、失败数量、耗时）
+  - 删除错误通知（详细错误信息）
+- ✅ ⚙️ **通知权限管理**
+  - 自动检测和请求通知权限
+  - 支持Electron和Web环境的通知
+  - 优雅降级处理（权限被拒绝时仍可正常使用）
+  - 5秒自动关闭，点击聚焦窗口
 
 ### 🚨 智能异常通知
 
-智能错误分类和处理机制：
+智能错误分类和处理机制，包含7种主要错误类型：
 
-- ✅ 🔒 **权限错误**：文件访问权限不足时的专门提醒
-- ✅ 💾 **磁盘空间**：存储空间不足的预警通知
-- ✅ 🌐 **网络错误**：网络连接问题的自动检测
-- ✅ 📁 **文件系统**：文件操作异常的详细反馈
-- ✅ 🧠 **内存不足**：系统资源紧张的及时警告
-- ✅ 💥 **应用异常**：程序错误的自动恢复提示
+- ✅ 🔒 **权限错误**：文件访问权限不足时的专门提醒（EACCES、EPERM等）
+- ✅ 💾 **磁盘空间**：存储空间不足的预警通知（ENOSPC等）
+- ✅ 🌐 **网络错误**：网络连接问题的自动检测（ECONNREFUSED、ENETUNREACH等）
+- ✅ 📁 **文件系统**：文件操作异常的详细反馈（ENOENT、ENOTDIR、EISDIR等）
+- ✅ 🧠 **内存不足**：系统资源紧张的及时警告（heap、RangeError等）
+- ✅ 💥 **应用异常**：程序错误的自动恢复提示（uncaughtException、unhandledRejection等）
+- ✅ ⚠️ **通用系统错误**：其他未分类错误的统一处理
+- ✅ 🔧 **全局错误处理**：自动设置全局错误监听器，捕获所有异常
 
 ## 🔍 重复文件检测算法
 
@@ -218,13 +262,14 @@
 递归扫描目录 → 收集文件信息 → 应用过滤规则
 ```
 
-- **递归扫描**：深度优先遍历目录结构
-- **文件信息收集**：获取文件名、路径、大小、修改时间等
+- **递归扫描**：深度优先遍历目录结构，使用Node.js fs模块
+- **文件信息收集**：获取文件名、路径、大小、修改时间、创建时间等完整元数据
 - **智能过滤**：
-  - 文件大小过滤（默认最大100MB）
-  - 文件类型过滤（支持扩展名白名单）
-  - 排除目录过滤（跳过系统目录如 node_modules、.git 等）
-  - 扫描深度限制（默认最大10层）
+  - 文件大小过滤（默认最大100MB，可配置）
+  - 文件类型过滤（支持扩展名白名单，如.mp3、.jpg等）
+  - 排除目录过滤（跳过系统目录如 node_modules、.git、System32 等）
+  - 扫描深度限制（默认最大10层，防止无限递归）
+  - 隐藏文件处理（可选择是否包含以.开头的隐藏文件）
 
 #### 🔄 第二阶段：初步分组
 
@@ -232,9 +277,12 @@
 按文件名分组 → 按文件大小分组 → 筛选候选重复文件
 ```
 
-- **文件名匹配**：提取文件基础名称（去除扩展名）进行不区分大小写匹配
-- **大小匹配**：只有文件大小完全相同的文件才可能是重复文件
-- **性能优化**：通过预筛选大幅减少需要进行哈希计算的文件数量
+- **文件名匹配**：提取文件基础名称（去除扩展名和路径）进行不区分大小写匹配
+- **大小匹配**：只有文件大小完全相同的文件才可能是重复文件（字节级精确匹配）
+- **性能优化**：
+  - 使用Map数据结构进行O(1)时间复杂度的分组
+  - 通过预筛选大幅减少需要进行哈希计算的文件数量（通常减少90%以上）
+  - 单文件组自动跳过（无重复可能）
 
 #### 🔐 第三阶段：精确验证
 
@@ -242,9 +290,15 @@
 计算文件哈希 → MD5内容比较 → 确认重复文件组
 ```
 
-- **MD5哈希计算**：对候选重复文件计算完整的MD5哈希值
-- **内容精确匹配**：只有哈希值完全相同的文件才被认定为重复文件
-- **分组输出**：将相同哈希值的文件归为一个重复文件组
+- **MD5哈希计算**：
+  - 使用Node.js crypto模块计算完整的MD5哈希值
+  - 流式读取文件，支持大文件处理（避免内存溢出）
+  - 异步处理，不阻塞UI界面
+- **内容精确匹配**：只有哈希值完全相同的文件才被认定为重复文件（100%准确）
+- **分组输出**：
+  - 将相同哈希值的文件归为一个重复文件组
+  - 按文件大小降序排列（便于选择保留最大文件）
+  - 提供详细的重复文件统计信息
 
 ### 🎯 扫描模式
 
@@ -369,21 +423,23 @@ D:\Backup\Documents\report.pdf (文件大小: 2.1MB)
 
 > 💡 **注意**：虽然已为 macOS 和 Linux 配置了构建脚本，但由于缺乏在这些平台上的充分测试，可能存在功能异常或兼容性问题。欢迎这些平台的用户尝试并提供反馈！
 
-### ⚡ 一键启动
+### ⚡ 快速开始
 
 ```bash
 # 1️⃣ 克隆项目
 git clone https://github.com/YZz-S/duplicate-file-detector.git
 cd duplicate-file-detector
 
-# 2️⃣ 安装依赖（如需使用代理）
-npm config set proxy http://127.0.0.1:10808
-npm config set https-proxy http://127.0.0.1:10808
-
-# 安装依赖
+# 2️⃣ 安装依赖
 npm install
 # 或使用 pnpm（推荐，速度更快）
 pnpm install
+
+# 3️⃣ 启动应用
+# Windows 用户（推荐）
+.\powershell-start.ps1
+# 或使用 npm
+npm start
 ```
 
 ### 🚀 应用启动方式
@@ -429,22 +485,12 @@ bash start-app.sh
 
 **npm 脚本版本：**
 ```bash
-# 安全启动（包含依赖检查和自动修复）
-npm run start:safe
-
-# 直接启动
+# 推荐启动方式
 npm start
 
 # 健康检查
 npm run health-check
 ```
-
-**特点：**
-- ✅ **智能检测**：自动检查端口、依赖和项目健康状态
-- ✅ **自动修复**：自动安装缺失依赖和修复常见问题
-- ✅ **详细反馈**：提供启动进度和错误信息
-- ✅ **稳定可靠**：确保 Electron 主进程正确构建后再启动
-- ✅ **优雅退出**：Ctrl+C 时自动清理所有进程
 
 #### 🌐 方式二：Web 开发模式（仅前端界面）
 
@@ -789,35 +835,7 @@ npm run electron:dist
 <details>
 <summary>🖥️ <strong>步骤 0：启动桌面应用</strong></summary>
 
-#### 启动真实桌面应用：
-
-1. **开发环境启动** 🚀
-   ```bash
-   # 推荐方式：启动完整功能的桌面应用
-   npm run electron:dev
-   # 或使用 pnpm
-   pnpm electron:dev
-   ```
-   - 应用将以原生桌面窗口形式运行
-   - **具备真实文件系统访问权限**
-   - 支持热重载，代码修改实时生效
-
-2. **Web 开发模式**（仅用于界面开发）🌐
-   ```bash
-   # 仅前端界面，功能受限
-   npm run dev
-   # 或使用 pnpm
-   pnpm dev
-   ```
-   - 浏览器访问：[http://localhost:5174](http://localhost:5174)
-   - ⚠️ **注意**：无法访问真实文件系统，仅能预览界面
-
-3. **生产环境使用** 📦
-   - 安装打包后的桌面应用
-   - 双击启动应用程序
-   - 享受原生桌面应用体验
-
-> 💡 **重要**：只有桌面应用版本（`npm run electron:dev`）才能真实访问和操作本地文件系统！
+> 💡 **重要**：请参考上方的「🚀 应用启动方式」部分获取详细的启动说明。推荐使用一键启动脚本以获得最佳体验。
 
 <details>
 <summary>📁 <strong>步骤 1：选择扫描目录</strong></summary>
@@ -977,25 +995,94 @@ npm run electron:dist
 | 技术 | 版本 | 用途 | 特点 |
 |------|------|------|------|
 | ![Electron](https://img.shields.io/badge/Electron-Latest-47848F?style=flat&logo=electron&logoColor=white) | Latest | 桌面框架 | 跨平台桌面应用、原生API |
-| ![React](https://img.shields.io/badge/React-18.x-61DAFB?style=flat&logo=react&logoColor=white) | 18.x | 前端框架 | 组件化、虚拟DOM、Hooks |
+| ![React](https://img.shields.io/badge/React-18+-61DAFB?style=flat&logo=react&logoColor=white) | 18+ | 前端框架 | 组件化、虚拟DOM、Hooks |
 | ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat&logo=typescript&logoColor=white) | 5.x | 类型系统 | 静态类型检查、智能提示 |
 | ![Vite](https://img.shields.io/badge/Vite-5.x-646CFF?style=flat&logo=vite&logoColor=white) | 5.x | 构建工具 | 快速热重载、ES模块 |
 | ![Electron Builder](https://img.shields.io/badge/Electron_Builder-Latest-FF6B6B?style=flat) | Latest | 打包工具 | 多平台构建、自动更新 |
+
+### 🏗️ 技术架构
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  React 18 前端  │◄──►│  Electron 主进程 │◄──►│   Node.js 后端  │
+│                 │    │                 │    │                 │
+│ • 用户界面      │    │ • 窗口管理      │    │ • 文件扫描      │
+│ • 交互逻辑      │    │ • IPC 通信      │    │ • 哈希计算      │
+│ • 状态管理      │    │ • 系统集成      │    │ • 文件操作      │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+#### 🔄 状态管理架构
+
+**Zustand 状态管理**：
+- **轻量级设计**：无样板代码，简洁的API设计
+- **响应式数据流**：
+  ```
+  用户操作 → Store Action → State 更新 → 组件重新渲染
+  ```
+- **模块化Store**：按功能划分store切片（scan、files、settings、ui等）
+- **状态持久化**：使用persist中间件自动保存关键设置
+- **TypeScript支持**：完整的类型推导和类型安全
+
+**组件通信模式**：
+- **父子组件**：Props down, Callbacks up
+- **兄弟组件**：通过Zustand共享状态
+- **跨层级组件**：直接使用store hooks
+- **Electron IPC**：渲染进程与主进程通过ipcRenderer/ipcMain通信
 
 ### 🎨 UI & 样式
 
 | 技术 | 版本 | 用途 | 特点 |
 |------|------|------|------|
 | ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.x-38B2AC?style=flat&logo=tailwind-css&logoColor=white) | 3.x | CSS框架 | 原子化CSS、响应式设计 |
-| ![Lucide React](https://img.shields.io/badge/Lucide-Latest-000000?style=flat&logo=lucide&logoColor=white) | Latest | 图标库 | 轻量级、可定制SVG图标 |
+| ![Lucide React](https://img.shields.io/badge/Lucide_React-Latest-000000?style=flat&logo=lucide&logoColor=white) | Latest | 图标库 | 轻量级、可定制SVG图标 |
 | ![Sonner](https://img.shields.io/badge/Sonner-Latest-FF6B6B?style=flat) | Latest | 通知组件 | 优雅的Toast通知 |
 
 ### ⚡ 状态管理 & 路由
 
 | 技术 | 版本 | 用途 | 特点 |
 |------|------|------|------|
-| ![Zustand](https://img.shields.io/badge/Zustand-4.x-FF9500?style=flat) | 4.x | 状态管理 | 轻量级、无样板代码 |
-| ![React Router](https://img.shields.io/badge/React_Router-6.x-CA4245?style=flat&logo=react-router&logoColor=white) | 6.x | 路由管理 | 声明式路由、代码分割 |
+| ![Zustand](https://img.shields.io/badge/Zustand-Latest-FF6B6B?style=flat) | Latest | 状态管理 | 轻量级、无样板代码、TypeScript支持 |
+| ![React Router](https://img.shields.io/badge/React_Router-6.x-CA4245?style=flat&logo=react-router&logoColor=white) | 6.x | 路由管理 | 声明式路由、嵌套路由 |
+
+#### 📊 状态管理详解
+
+**Zustand Store 结构**：
+```typescript
+// 主应用状态
+interface AppState {
+  // 扫描相关状态
+  isScanning: boolean
+  progress: number
+  currentFile: string
+  duplicateGroups: DuplicateGroup[]
+  scanSettings: ScanSettings
+  
+  // 文件操作相关状态
+  selectedFiles: string[]
+  deleteHistory: DeleteRecord[]
+  previewFile: FileInfo | null
+  
+  // 应用设置相关状态
+  theme: 'light' | 'dark'
+  notifications: boolean
+  autoSave: boolean
+  
+  // Actions
+  startScan: (settings: ScanSettings) => void
+  updateProgress: (progress: number) => void
+  setDuplicateGroups: (groups: DuplicateGroup[]) => void
+  selectFiles: (files: string[]) => void
+  updateSettings: (settings: Partial<SettingsState>) => void
+}
+```
+
+**数据流向**：
+```
+用户交互 → React组件 → Zustand Action → State更新 → 组件重新渲染
+     ↓
+Electron IPC → 主进程 → 文件系统操作 → 结果返回 → Store Action → State更新
+```
 
 ### 🔧 开发工具
 
@@ -1078,7 +1165,7 @@ pnpm electron:dev
 - 📝 **代码规范**：遵循 ESLint 和 Prettier 配置
 - 🏷️ **类型安全**：充分利用 TypeScript 类型系统
 - 🧩 **组件设计**：保持组件单一职责，提高复用性
-- 🪝 **Hooks 使用**：合理使用自定义 Hooks 抽象逻辑
+- 🔧 **Hooks使用**：合理使用React Hooks抽象逻辑
 - 📦 **状态管理**：使用 Zustand 进行状态管理
 - 🎨 **样式规范**：使用 Tailwind CSS 原子化类名
 
@@ -1133,7 +1220,6 @@ pnpm electron:dev
 
 #### 待开发功能 🚧
 - ❌ **智能推荐保留文件**：基于文件大小、时间等自动推荐保留策略
-- ❌ **系统通知功能**：支持扫描和删除操作的实时通知提醒  
 - ❌ **按规则批量选择**：支持保留最大/最新文件等智能规则
 - ❌ **自动撤销删除**：一键从回收站恢复已删除文件
 - ❌ **深色/浅色主题**：完整的主题切换功能
